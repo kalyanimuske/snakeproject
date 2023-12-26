@@ -1,0 +1,210 @@
+#start
+#1 frame
+#2 snake head and its move
+#3 snake food and eating and food again coming
+#4 snake body grow (behind head)
+#5 border collision
+#6 body collision and not in opposite direction
+#7scoring
+
+import turtle
+import time
+import random
+
+delay = 0.1
+
+#score
+score = 0
+high_score = 0   #preferred way of writing python code
+
+#setting the screen
+
+wn = turtle.Screen()
+wn.title("SNAKE GAME")
+wn.bgcolor("black")
+wn.setup(width=600 , height=600)
+wn.tracer(0)        #animation #turns off the screen updates
+
+#SNAKE HEAD
+head = turtle.Turtle()
+head.speed(0)       #fastest animation speed of turtle
+head.shape("square")
+head.color("red")
+head.penup()        #so that it does not draw anything
+head.goto(0,0)      #so that it can start at centre of the screen
+head.direction = "stop"
+
+#SNAKE FOOD
+food = turtle.Turtle()
+food.speed(0)       #fastest animation speed of turtle
+food.shape("circle")
+food.color("yellow")
+food.penup()        #so that it does not draw anything
+food.goto(0,100)    #so that it can start at centre of the screen
+
+segments = []       #list if snake body segments 
+
+#pen(writing score)(creating a turtle of write)
+pen = turtle.Turtle()
+pen.speed(0)        #animation speed
+#pen.shape("sqaure") #doest matter
+pen.color("white")
+pen.penup()         #should not draw any lines(pen-up)
+pen.hideturtle()    #hide the turtle(short form HT)
+pen.goto(0,260)     #this gonna be up on the screen(position)
+pen.write("SCORE: 0    HIGH SCORE: 0", align="center", font=("courier", 24, "normal"))
+                    #default score
+
+#fuctions           #make a move
+
+def go_up():
+    if head.direction != "down":  #if going up, cant go down directly(step by step i.e up--left--down)
+        head.direction = "up"
+
+def go_down():
+    if head.direction != "up":
+        head.direction = "down"
+
+def go_left():
+    if head.direction != "right":
+        head.direction = "left"
+
+def go_right():
+    if head.direction != "left":
+        head.direction = "right"
+
+
+def move():
+    if head.direction == "up":
+        y = head.ycor()        #move to the y cordinate
+        head.sety(y + 20)
+
+    if head.direction == "down":
+        y = head.ycor()        #move to the y cordinate
+        head.sety(y - 20)
+
+    if head.direction == "left":
+        x = head.xcor()        #move to the x cordinate
+        head.setx(x - 20)
+
+    if head.direction == "right":
+        x = head.xcor()        #move to the x cordinate
+        head.setx(x + 20)
+
+
+#KEYBOARD OPERATIONS
+wn.listen()
+wn.onkeypress(go_up , "w")
+wn.onkeypress(go_down , "s")
+wn.onkeypress(go_left , "a")
+wn.onkeypress(go_right , "d")
+
+
+
+# MAIN GAME LOOP
+while True:         #repeats over and over
+    wn.update()     #everytime in loop, it updates the screen
+    
+    #check for the collision with the border
+    if head.xcor()>290 or head.xcor()<-290 or head.ycor()>290 or head.ycor()<-290:
+        #right,left,top,bottom
+        time.sleep(1)           #pauses the game for 1 sec
+        head.goto(0,0)          #die and come to centre again
+        head.direction = "stop" #and stop at that point
+
+        # Hide the segments(as they are appearing on head of snake at starting)
+        for segment in segments:       #goes through the list of segments (0--9)
+            segment.goto(1000,1000)    #move that segment out of screen
+
+        #clear the segments lists(as it is still appearing on 2nd attempt)
+        segments.clear()
+
+        #reset the score to 0 after the snake dies
+        score = 0
+
+        #reset the delay if we touch the wall
+        delay = 0.1
+        
+        pen.clear()
+        pen.write("SCORE: {}  HIGH SCORE:  {}".format(score, high_score), align="center", font=("courier", 24, "normal" ))
+
+
+    #check for a collision with the food
+    if head.distance(food) < 20: #each of the turtle shape is 20*20 pixel
+                                 #centre of one pixel to other between is 10
+                                 #if distance is less than 20 that means they have collided
+        #move the food to any other random spot of the screen
+        x = random.randint(-290, 290) #total screen is 600*600, (-300,300 at x,y cordinate)
+        y = random.randint(-290,290)  # 290 so that food could not touch the border
+        food.goto(x,y)
+
+        #add a new segment
+        new_segment = turtle.Turtle()
+        new_segment.speed(0)   #animation speed
+        new_segment.shape("square")
+        new_segment.color("orange")
+        new_segment.penup()    #make sure as it doesnt draw on the screen
+        segments.append(new_segment)  #to snake body to grow
+
+
+        #shorten the delay(the snake gets faster when it touches the food)
+        delay -= 0.001
+
+
+        #increase the score(on collision with the food)
+        score += 10        #increse the score by 10
+
+        if score > high_score:
+            high_score = score
+
+        pen.clear()
+        pen.write("SCORE: {}  HIGH SCORE:  {}".format(score, high_score), align="center", font=("courier", 24, "normal" ))
+
+    # Move the end segments first in reverse order(if more than 1 segment)
+    for index in range(len(segments)-1 , 0 , -1):    
+                      #list works from 0---9 i.e 10 elements (if 10 error will come)
+                      #9---1+ (0 not addressing)
+                      #getting down by 1 each time(-1)
+        x = segments[index-1].xcor()   #each segment is a turtle, turtle containd x, ycor
+                                           #(9th segment move to 8 and so on)
+        y = segments[index-1].ycor()
+        segments[index].goto(x,y)      #loop working (9---1   k)
+
+    # Move segment 0 to where the head is
+    if len(segments) > 0:
+        x = head.xcor()
+        y = head.ycor()
+        segments[0].goto(x,y)
+
+
+    move()          #calling that move fuction
+
+    #check for head collision with the body segments
+    for segment in segments:            #will go through each segment one at a time
+        if segment.distance(head) < 20: #overlapping
+            time.sleep(1)
+            head.goto(0,0)
+            head.direction = "stop"
+
+            # Hide the segments(and clear the segments list)(again)
+            for segment in segments:        #goes through the list of segments (0--9)
+                segment.goto(1000,1000)    #move that segment out of screen
+
+            #clear the segments lists(as it is still appearing on 2nd attempt)
+            segments.clear()
+
+            #reset the score(again)
+            score = 0
+
+            #reset the delay
+            delay= 0.1
+
+            #update the score display
+            pen.clear()
+            pen.write("SCORE: {}  HIGH SCORE:  {}".format(score, high_score), align="center", font=("courier", 24, "normal" ))
+
+
+    time.sleep(delay) #using threads delay the snake to move so that we can see
+
+
+wn.mainloop()
